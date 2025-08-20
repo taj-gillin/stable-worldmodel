@@ -327,8 +327,6 @@ class PushTRolloutCompletion(WorldWrapper):
         self.transforms = transforms or transforms.Compose([])
 
     def __iter__(self):
-        iter(self.world)
-
         states = {
             "proprio": [],
             "pixels": [],
@@ -354,46 +352,54 @@ class PushTRolloutCompletion(WorldWrapper):
             # sample a random starting point in the rollout
             start_idx = rng.integers(0, rollout_length - self.horizon)
 
-            init_obs = {
-                "proprio": obs["proprio"][start_idx].numpy(),
-                "pixels": obs["visual"][start_idx],
-                "state": state[start_idx].numpy(),
-            }
+            #     init_obs = {
+            #         "proprio": obs["proprio"][start_idx].numpy(),
+            #         "pixels": obs["visual"][start_idx],
+            #         "state": state[start_idx].numpy(),
+            #     }
 
-            goal_obs = {
-                "proprio": obs["proprio"][start_idx + self.horizon].numpy(),
-                "pixels": obs["visual"][start_idx + self.horizon],
-                "state": state[start_idx + self.horizon].numpy(),
-            }
+            #     goal_obs = {
+            #         "proprio": obs["proprio"][start_idx + self.horizon].numpy(),
+            #         "pixels": obs["visual"][start_idx + self.horizon],
+            #         "state": state[start_idx + self.horizon].numpy(),
+            #     }
 
-            # apply transforms to visual observations
-            init_obs["pixels"] = self.transforms(init_obs["pixels"]).numpy()
-            goal_obs["pixels"] = self.transforms(goal_obs["pixels"]).numpy()
+            #     # apply transforms to visual observations
+            #     init_obs["pixels"] = self.transforms(init_obs["pixels"]).numpy()
+            #     goal_obs["pixels"] = self.transforms(goal_obs["pixels"]).numpy()
 
-            states["proprio"].append(init_obs["proprio"])
-            states["pixels"].append(init_obs["pixels"])
-            states["state"].append(init_obs["state"])
+            #     states["proprio"].append(init_obs["proprio"])
+            #     states["pixels"].append(init_obs["pixels"])
+            #     states["state"].append(init_obs["state"])
 
-            goals["proprio"].append(goal_obs["proprio"])
-            goals["pixels"].append(goal_obs["pixels"])
-            goals["state"].append(goal_obs["state"])
+            #     goals["proprio"].append(goal_obs["proprio"])
+            #     goals["pixels"].append(goal_obs["pixels"])
+            #     goals["state"].append(goal_obs["state"])
 
-            init_state = np.array(state[start_idx], dtype=np.float64)
-            self.unwrapped.envs.envs[env_idx].unwrapped._set_state(init_state)
+            #     init_state = np.array(state[start_idx], dtype=np.float64)
+            #     self.unwrapped.envs.envs[env_idx].unwrapped._set_state(init_state)
 
-        self.unwrapped.states = {
-            "proprio": np.stack(states["proprio"]),
-            "pixels": np.stack(states["pixels"]),
-            "state": np.stack(states["state"]),
-        }
+            # self.unwrapped.states = {
+            #     "proprio": np.stack(states["proprio"]),
+            #     "pixels": np.stack(states["pixels"]),
+            #     "state": np.stack(states["state"]),
+            # }
 
-        self.unwrapped.goal_states = {
-            "proprio": np.stack(goals["proprio"]),
-            "pixels": np.stack(goals["pixels"]),
-            "state": np.stack(goals["state"]),
-        }
+            # self.unwrapped.goal_states = {
+            #     "proprio": np.stack(goals["proprio"]),
+            #     "pixels": np.stack(goals["pixels"]),
+            #     "state": np.stack(goals["state"]),
+            # }
+
+            init_state = state[start_idx].numpy()
+            goal_state = state[start_idx + self.horizon].numpy()
+
+            self.unwrapped.envs.envs[env_idx].unwrapped.reset_to_state = init_state
+            self.unwrapped.goal_envs.envs[env_idx].unwrapped.reset_to_state = goal_state
 
         print("Resetting the world with expert data!")
+
+        iter(self.world)
 
         return self
 
