@@ -21,136 +21,8 @@ class World:
         sample_goal_every_k_steps: int = -1,
         output_dir: str = None,
     ):
-        self.output_dir = output_dir
-        self.envs, self.goal_envs = self.make_env(
-            env_name,
-            num_envs=num_envs,
-            wrappers=wrappers,
-            goal_wrappers=goal_wrappers,
-            max_episode_steps=max_episode_steps,
-            add_video_wrapper=output_dir is not None,
-        )
-
-        logging.info("WORLD INITIALIZED")
-        logging.info(f"ACTION SPACE: {self.envs.action_space}")
-        logging.info(f"OBSERVATION SPACE: {self.envs.observation_space}")
         self.num_envs = num_envs
-
         self.set_seed(seed)
-
-        # note if sample_goal_every_k_steps is set to -1, will sample goal once per episode
-        # TODO implement sample_goal_every_k_steps
-
-    def make_env(
-        self,
-        env_name,
-        num_envs=1,
-        wrappers=(),
-        goal_wrappers=(),
-        max_episode_steps=100,
-        add_video_wrapper=True,
-    ):
-        def build_env(extra_wrappers=(), idx=None):
-            e = gym.make(
-                env_name, render_mode="rgb_array", max_episode_steps=max_episode_steps
-            )
-            for w in extra_wrappers:
-                e = w(e)
-            if add_video_wrapper and idx is not None:
-                env_output_dir = self.output_dir / f"env_{idx}"
-                Path(env_output_dir).mkdir(parents=True, exist_ok=True)
-                e = xenoworlds.wrappers.RecordVideo(
-                    e, video_folder=env_output_dir, name_prefix=f"env_{idx}"
-                )
-            return e
-
-        env_fns = [lambda i=i: build_env(wrappers, i) for i in range(num_envs)]
-        goal_env_fns = [lambda: build_env(goal_wrappers, None) for _ in range(num_envs)]
-
-        return SyncVectorEnv(env_fns), SyncVectorEnv(goal_env_fns)
-
-    @property
-    def observation_space(self):
-        return self.envs.observation_space
-
-    @property
-    def action_space(self):
-        return self.envs.action_space
-
-    @property
-    def single_action_space(self):
-        return self.envs.single_action_space
-
-    @property
-    def single_observation_space(self):
-        return self.envs.single_observation_space
-
-    def close(self, **kwargs):
-        return self.envs.close(**kwargs)
-
-    # TEMOPORARY, need to delete!!!
-    def denormalize(self, x):
-        # x is (B,C,H,W) in [-1,1]
-        return (x * 0.5) + 0.5
-
-    def __iter__(self):
-        self.terminations = np.array([False] * self.num_envs)
-        self.truncations = np.array([False] * self.num_envs)
-        self.rewards = None
-        logging.info(f"Resetting the ({self.num_envs}) world(s)!")
-        self.states, finfos = self.envs.reset(seed=self.env_seeds)
-        self.goal_states, _ = self.goal_envs.reset(seed=self.goal_seeds)
-
-        return self
-
-    def __next__(self):
-        if not all(self.terminations) and not all(self.truncations):
-            return (
-                self.states,
-                self.goal_states,
-                self.rewards,
-            )
-        else:
-            raise StopIteration
-
-    def step(self, actions):
-        (
-            self.states,
-            self.rewards,
-            self.terminations,
-            self.truncations,
-            self.infos,
-        ) = self.envs.step(actions)
-
-    def set_seed(self, seed):
-        rng = torch.Generator()
-        rng.manual_seed(seed)
-        self.seed = seed
-
-        # one seed per sub-env
-        self.env_seeds = torch.randint(
-            0, 2**32 - 1, (self.num_envs,), generator=rng
-        ).tolist()
-        self.goal_seeds = torch.randint(
-            0, 2**32 - 1, (self.num_envs,), generator=rng
-        ).tolist()
-
-
-########## TMP #############
-
-
-class PushTWorld(World):
-    def __init__(
-        self,
-        env_name,
-        num_envs,
-        wrappers: list = None,
-        goal_wrappers: list = None,
-        seed: int = 2349867,
-        max_episode_steps: int = 100,
-        sample_goal_every_k_steps: int = -1,
-        output_dir: str = None,
-    ):
         self.output_dir = output_dir
         self.envs, self.goal_envs = self.make_env(
             env_name,
@@ -164,8 +36,6 @@ class PushTWorld(World):
         logging.info("WORLD INITIALIZED")
         logging.info(f"ACTION SPACE: {self.envs.action_space}")
         logging.info(f"OBSERVATION SPACE: {self.envs.observation_space}")
-        self.num_envs = num_envs
-
         self.set_seed(seed)
 
         # note if sample_goal_every_k_steps is set to -1, will sample goal once per episode
@@ -184,12 +54,15 @@ class PushTWorld(World):
             e = gym.make(
                 env_name, render_mode="rgb_array", max_episode_steps=max_episode_steps
             )
-
             for w in extra_wrappers:
-                try:
-                    return w(e, idx, is_goal)
-                except TypeError:
-                    return w(e)
+                e = w(e)
+
+                print(
+                    f"Wrapped env {idx} {hasattr(e, 'is_deform')} {self.env_seeds[idx]}"
+                )
+
+                if hasattr(e, "is_deform"):
+                    e.set_seed(self.env_seeds[idx])
 
             if add_video_wrapper and not is_goal:
                 env_output_dir = self.output_dir / f"env_{idx}"
@@ -199,7 +72,7 @@ class PushTWorld(World):
                 )
             return e
 
-        env_fns = [lambda i=i: build_env(wrappers, i, False) for i in range(num_envs)]
+        env_fns = [lambda i=i: build_env(wrappers, i) for i in range(num_envs)]
         goal_env_fns = [
             lambda i=i: build_env(goal_wrappers, i, True) for i in range(num_envs)
         ]

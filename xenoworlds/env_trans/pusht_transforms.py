@@ -47,11 +47,19 @@ class BaseDeform(gym.Wrapper):
         self.apply_before_step = apply_before_step
         self.apply_at_init = apply_at_init
         self._step = 0
-
         self.init_applied = False  # Track if deformation has been applied at init
+
+        self.rng = np.random.default_rng()
 
     def deform(self):
         raise NotImplementedError("Deform method not implemented.")
+
+    def set_seed(self, seed):
+        self.rng = np.random.default_rng(seed=seed)
+
+    @property
+    def is_deform(self):
+        return True
 
     @property
     def should_update(self):
@@ -184,7 +192,7 @@ class ColorDeform(BaseDeform):
             if isinstance(self.colors, str) or len(self.colors) == 1:
                 choice = self.colors
             else:
-                choice = random.choice(self.colors)
+                choice = self.rng.choice(self.colors)
             try:
                 return (
                     pygame.Color(choice)
@@ -195,7 +203,7 @@ class ColorDeform(BaseDeform):
             except (ValueError, TypeError):
                 return pygame.Color(*choice)
         else:
-            return pygame.Color(random.choice(list(pygame.color.THECOLORS.keys())))
+            return pygame.Color(self.rng.choice(list(pygame.color.THECOLORS.keys())))
 
     def _deform_color(self, target_str, shared_color=None):
         # Access underlying env objects
@@ -290,7 +298,7 @@ class ShapeDeform(BaseDeform):
 
         if isinstance(self.shapes, (list, tuple)):
             if self.randomize:
-                return random.choice(self.shapes)
+                return self.rng.choice(self.shapes)
             if idx >= len(self.shapes):
                 raise ValueError(
                     "When randomize=False and shapes is a list, "
@@ -366,15 +374,7 @@ class ImageNetDeform(BaseDeform):
             pygame.display.init()
             pygame.display.set_mode((1, 1))
 
-        ds = load_dataset("frgfm/imagenette", "320px", split="validation")
-        rng = np.random.default_rng(42)  # TODO CHANGE THIS <<<<<<<<<<<<
-        idx = int(rng.integers(0, len(ds)))
-        img = ds[idx]["image"]  # PIL.Image
-        arr = np.array(img.convert("RGB"))
-        self.image = self.ndarray_2_surface(arr)
-
-        if self.apply_at_init:
-            self.deform()
+        self.image = None
 
     def ndarray_2_surface(self, img):
         if not isinstance(img, (np.ndarray)):
@@ -406,8 +406,14 @@ class ImageNetDeform(BaseDeform):
             return surf
 
     def deform(self):
-        if self.image is not None:
-            self.env.unwrapped.set_background(self.image)
+        if self.image is None:
+            ds = load_dataset("frgfm/imagenette", "320px", split="validation")
+            idx = int(self.rng.integers(0, len(ds)))
+            img = ds[idx]["image"]  # PIL.Image
+            arr = np.array(img.convert("RGB"))
+            self.image = self.ndarray_2_surface(arr)
+
+        self.env.unwrapped.set_background(self.image)
 
 
 # todo add TextureDeform

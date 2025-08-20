@@ -161,9 +161,7 @@ def run():
         ])
 
     deform_wrappers = [
-        lambda x: xenoworlds.ImageNetDeform(
-            x,
-        ),
+        lambda x: xenoworlds.ImageNetDeform(x),
     ]
 
     wrappers = deform_wrappers + [
@@ -182,10 +180,10 @@ def run():
 
     world = xenoworlds.World(
         "xenoworlds/PushT-v1",
-        num_envs=2,
+        num_envs=10,
         wrappers=wrappers,
-        max_episode_steps=25,
-        goal_wrappers=goal_wrappers + deform_wrappers,
+        max_episode_steps=Config.horizon * Config.frameskip,
+        goal_wrappers=goal_wrappers,
         seed=torch.randint(0, 10000, (1,)).item(),
         output_dir=exp_path,
     )
