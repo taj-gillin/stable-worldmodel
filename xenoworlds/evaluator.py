@@ -1,3 +1,4 @@
+from pathlib import Path
 import torch
 from .policy import BasePolicy
 from .world import World
@@ -8,10 +9,13 @@ import numpy as np
 ### Evaluator(env, policy)
 class Evaluator:
     # the role of evaluator is to determine perf of the policy in the env
-    def __init__(self, world: World, policy: BasePolicy, device="cpu"):
+    def __init__(
+        self, world: World, policy: BasePolicy, output_dir="./results", device="cpu"
+    ):
         self.world = world
         self.policy = policy
         self.device = device
+        self.output_dir = output_dir
 
     # TODO move ths to the policy class
     def prepare_obs(self, obs):
@@ -35,7 +39,7 @@ class Evaluator:
 
                 # -- get actions from the policy
                 if actions.size == 0:
-                    actions = self.policy.get_action(obs, goal_obs)
+                    actions = self.policy.get_action(obs, goal_obs, decode=True)
 
                 exec_action, actions = actions[:, 0], actions[:, 1:]
 
@@ -57,28 +61,44 @@ class Evaluator:
 
                 # print(exec_action)
 
+                # ! keep
                 # assert action is between -1 and 1
-                assert np.all(np.abs(exec_action) <= 1.0), "Action out of bound [-1, 1]"
+                # assert np.all(np.abs(exec_action) <= 1.0), "Action out of bound [-1, 1]"
 
                 # TODO SHOULD GET SOME DATA FROM THE ENV TO KNOW HOW GOOD
                 self.world.step(exec_action)
 
             print(f"Episode {episode + 1} finished ")
+
+            goal_obs = goal_obs["state"].squeeze(1).cpu().numpy()
+            obs = obs["state"].squeeze(1).cpu().numpy()
+            self.eval_state(goal_obs, obs)
+
             self.world.close()
 
         return data
 
-    ### DataSetUpload (download using stable_ssl)
-    # def eval_state(self, goal_state, cur_state):
-    #     """
-    #     Return True if the goal is reached
-    #     [agent_x, agent_y, T_x, T_y, angle, agent_vx, agent_vy]
-    #     from: https://github.com/gaoyuezhou/dino_wm/blob/main/env/pusht/pusht_wrapper.py
-    #     """
-    #     # if position difference is < 20, and angle difference < np.pi/9, then success
-    #     pos_diff = np.linalg.norm(goal_state[:4] - cur_state[:4])
-    #     angle_diff = np.abs(goal_state[4] - cur_state[4])
-    #     angle_diff = np.minimum(angle_diff, 2 * np.pi - angle_diff)
-    #     success = pos_diff < 20 and angle_diff < np.pi / 9
-    #     state_dist = np.linalg.norm(goal_state - cur_state)
-    #     return success, state_dist
+    def eval_state(self, goal_state, cur_state):
+        """
+        Return True if the goal is reached
+        [agent_x, agent_y, T_x, T_y, angle, agent_vx, agent_vy]
+        from: https://github.com/gaoyuezhou/dino_wm/blob/main/env/pusht/pusht_wrapper.py
+        """
+
+        # if position difference is < 20, and angle difference < np.pi/9, then success
+        pos_diff = np.linalg.norm(
+            goal_state[:, :4] - cur_state[:, :4], axis=-1
+        )  # (batch_size,)
+        angle_diff = np.abs(goal_state[:, 4] - cur_state[:, 4])  # (batch_size,)
+        angle_diff = np.minimum(angle_diff, 2 * np.pi - angle_diff)  # (batch_size,)
+
+        success = (pos_diff < 20) & (angle_diff < np.pi / 9)  # (batch_size,)
+        state_dist = np.linalg.norm(goal_state - cur_state, axis=-1)  # (batch_size,)
+
+        for i in range(len(success)):
+            env_output_dir = self.output_dir / f"env_{i}"
+            env_output_dir.mkdir(parents=True, exist_ok=True)
+            with open(env_output_dir / "results.txt", "a") as f:
+                f.write(f"Succes: {success[i]}\nState distance: {state_dist[i]}\n")
+
+        return success, state_dist

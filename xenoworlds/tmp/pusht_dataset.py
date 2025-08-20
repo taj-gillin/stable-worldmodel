@@ -349,28 +349,28 @@ def load_pusht_slice_train_val(
     return datasets, traj_dset
 
 
-if __name__ == "__main__":
-    import time
+# if __name__ == "__main__":
+#     import time
 
-    pusht_dataset = PushTDataset(data_path="pusht_noise/train/")
-    print(f"Length of dataset: {len(pusht_dataset)}")
+#     pusht_dataset = PushTDataset(data_path="pusht_noise/train/")
+#     print(f"Length of dataset: {len(pusht_dataset)}")
 
-    for ep_idx in range(len(pusht_dataset)):
-        print(f"Episode {ep_idx} len of data {len(pusht_dataset[ep_idx])}")
+#     for ep_idx in range(len(pusht_dataset)):
+#         print(f"Episode {ep_idx} len of data {len(pusht_dataset[ep_idx])}")
 
-        obs, act, state, shape = pusht_dataset[ep_idx]
+#         obs, act, state, shape = pusht_dataset[ep_idx]
 
-        print("==== OBSERVATIONS ====")
-        for k, v in obs.items():
-            print(f"{k}: {v.shape}")
+#         print("==== OBSERVATIONS ====")
+#         for k, v in obs.items():
+#             print(f"{k}: {v.shape}")
 
-        print("==== ACTIONS ====")
-        print(f"actions: {act.shape}")
+#         print("==== ACTIONS ====")
+#         print(f"actions: {act.shape}")
 
-        print("==== STATES ====")
-        print(f"states: {state.shape}")
+#         print("==== STATES ====")
+#         print(f"states: {state.shape}")
 
-        print("==== SHAPE ====")
-        print(f"shape: {shape['shape']}")
+#         print("==== SHAPE ====")
+#         print(f"shape: {shape['shape']}")
 
-        time.sleep(10)
+#         time.sleep(10)

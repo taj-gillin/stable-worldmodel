@@ -1,28 +1,35 @@
-# neoworld
+# TheMatrix
 
-## DinoWM CKPT
+## DINO-WM
+
+### PushT
+
+to download the checkpoint, run the following commands:
 
 ```bash
 wget https://osf.io/xvzs4/download -O ckpt.zip && unzip ckpt.zip && rm ckpt.zip
 ```
 
-## DinWM PushT Dataset
+to download the dataset, run the following commands:
 
 ```bash
 wget https://osf.io/k2d8w/download -O dinowm_pushT.zip && unzip dinowm_pushT.zip && rm dinowm_pushT.zip
 ```
 
-## TODO:
+## WiP:
 
+- [ ] Add distance base goal sampling wrapper
 - [ ] clean code
 - [ ] add more documentation
 - [ ] make everything uniform, e.g solver param names
 - [ ] make transform more clear (e.g wrapper for world model, wrapper for planning etc)
 
+
 ## Installation
 
 Follow the below isntruction (if you are not using conda, adjust accordingly)
 
+```bash
 1. create conda env
   ```
   conda create -n xeno python=3.10
@@ -48,6 +55,3 @@ Follow the below isntruction (if you are not using conda, adjust accordingly)
 export PATH="$MUJOCO_HOME/bin:$PATH"
 export LD_LIBRARY_PATH="$MUJOCO_HOME/bin:$LD_LIBRARY_PATH"
 ```
-
-
-

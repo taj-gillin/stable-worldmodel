@@ -9,6 +9,9 @@ import random
 # color transform functions
 # shape transform functions
 
+from datasets import load_dataset
+from PIL import Image
+
 
 def remove_body_by_id(space, target_id):
     """Remove a body (and its shapes) from a pymunk.Space by its my_id."""
@@ -61,7 +64,6 @@ class BaseDeform(gym.Wrapper):
         self._step = 0
         reset_res = self.env.reset(**kwargs)
         if self.apply_on_reset or self.should_update:
-            print(f"{self._step}")
             self.deform()
         return reset_res
 
@@ -349,6 +351,63 @@ class ShapeDeform(BaseDeform):
                 self.env.unwrapped.agent = new_body
             elif known_label == "block":
                 self.env.unwrapped.block = new_body
+
+
+class ImageNetDeform(BaseDeform):
+    def __init__(
+        self,
+        env,
+        **kwargs,
+    ):
+        super().__init__(env, **kwargs)
+
+        if not pygame.display.get_init():
+            os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
+            pygame.display.init()
+            pygame.display.set_mode((1, 1))
+
+        ds = load_dataset("frgfm/imagenette", "320px", split="validation")
+        rng = np.random.default_rng(42)  # TODO CHANGE THIS <<<<<<<<<<<<
+        idx = int(rng.integers(0, len(ds)))
+        img = ds[idx]["image"]  # PIL.Image
+        arr = np.array(img.convert("RGB"))
+        self.image = self.ndarray_2_surface(arr)
+
+        if self.apply_at_init:
+            self.deform()
+
+    def ndarray_2_surface(self, img):
+        if not isinstance(img, (np.ndarray)):
+            raise ValueError("Input must be a NumPy array.")
+
+        arr = np.asarray(img)
+        if arr.ndim != 3 or arr.shape[2] not in (3, 4):
+            raise ValueError("NumPy background must be HxWx3 or HxWx4")
+
+        # Convert dtype to uint8 (auto-scale floats in [0,1])
+        if arr.dtype != np.uint8:
+            if np.issubdtype(arr.dtype, np.floating):
+                arr = np.clip(arr, 0.0, 1.0)
+                arr = (arr * 255.0 + 0.5).astype(np.uint8)
+            else:
+                arr = arr.astype(np.uint8, copy=False)
+
+        # pygame.surfarray.make_surface expects (W, H, C)
+        if arr.shape[2] == 3:
+            surf = pygame.surfarray.make_surface(arr.swapaxes(0, 1))
+            return surf
+        else:  # RGBA
+            rgb = arr[..., :3]
+            a = arr[..., 3]
+            surf = pygame.surfarray.make_surface(rgb.swapaxes(0, 1)).convert_alpha()
+            alpha = pygame.surfarray.pixels_alpha(surf)
+            alpha[:, :] = a.swapaxes(0, 1)
+            del alpha
+            return surf
+
+    def deform(self):
+        if self.image is not None:
+            self.env.unwrapped.set_background(self.image)
 
 
 # todo add TextureDeform

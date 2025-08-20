@@ -22,3 +22,8 @@ class BaseSolver(torch.nn.Module):
     ) -> torch.Tensor:
         """Solve the planning optimization problem given states, action space, and goals."""
         raise NotImplementedError("Solver must implement the solve method.")
+
+    @property
+    def unwrapped(self):
+        """Return the unwrapped solver."""
+        return self

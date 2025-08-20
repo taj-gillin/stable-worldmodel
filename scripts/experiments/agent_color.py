@@ -11,7 +11,7 @@ class Config:
 
     # experiments
     root_dir: str = "./results/"
-    exp_name: str = "dino_wm_pusht_eval"
+    exp_name: str = "dinowm_agent_color"
 
     # encoder
     img_size: int = 224
@@ -159,14 +159,22 @@ def run():
             transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
         ])
 
-    wrappers = [
+    deform_wrappers = [
+        lambda x: xenoworlds.ColorDeform(
+            x,
+            target=["agent"],
+            every_k_steps=-1,
+        ),
+    ]
+
+    wrappers = deform_wrappers + [
         lambda x: xenoworlds.wrappers.AddRenderObservation(x, render_only=False),
         lambda x: xenoworlds.wrappers.TransformObservation(
             x, transform=default_transform()
         ),
     ]
 
-    goal_wrappers = [
+    goal_wrappers = deform_wrappers + [
         lambda x: xenoworlds.wrappers.AddRenderObservation(x, render_only=False),
         lambda x: xenoworlds.wrappers.TransformObservation(
             x, transform=default_transform()
@@ -175,9 +183,9 @@ def run():
 
     world = xenoworlds.World(
         "xenoworlds/PushT-v1",
-        num_envs=2,
+        num_envs=10,
         wrappers=wrappers,
-        max_episode_steps=25,
+        max_episode_steps=Config.horizon * Config.frameskip,
         goal_wrappers=goal_wrappers,
         seed=torch.randint(0, 10000, (1,)).item(),
         output_dir=exp_path,
@@ -187,6 +195,7 @@ def run():
     expert_dataset = xenoworlds.tmp.PushTDataset(
         data_path="pusht_noise/val/", normalize_action=False
     )
+
     world = xenoworlds.PushTRolloutCompletion(
         world,
         horizon=Config.horizon * Config.frameskip,
@@ -197,30 +206,7 @@ def run():
 
     action_dim = world.single_action_space.shape[-1]
     proprio_dim = world.single_observation_space["proprio"].shape[-1]
-
-    print(f"Action space dim: {action_dim}")
-    print(f"Proprioceptive space dim: {proprio_dim}")
     world_model = get_world_model(action_dim, proprio_dim, device=device)
-
-    print(f"World model: {world_model}")
-
-    # -- create a random policy
-    # policy = xenoworlds.policy.RandomPolicy(world)
-    # planning_solver = xenoworlds.solver.GDSolver(
-    #     world_model,
-    #     n_steps=1000,
-    #     action_space=world.action_space,
-    #     horizon=Config.horizon,
-    #     action_noise=0,
-    # )
-    # policy = xenoworlds.policy.PlanningPolicy(world, planning_solver)
-
-    # random_solver = xenoworlds.solver.RandomSolver(
-    #     world_model,
-    #     horizon=Config.horizon,
-    # )
-
-    # policy = xenoworlds.policy.PlanningPolicy(world, random_solver)
 
     cem_solver = xenoworlds.solver.CEMSolver(
         world_model,
@@ -233,10 +219,7 @@ def run():
         device=device,
     )
 
-    cem_solver = xenoworlds.solver.MPCWrapper(
-        cem_solver,
-        n_mpc_actions=Config.frameskip,  # 1
-    )
+    cem_solver = xenoworlds.solver.MPCWrapper(cem_solver, n_mpc_actions=1)
 
     policy = xenoworlds.policy.PlanningPolicy(world, cem_solver, output_dir=exp_path)
 
@@ -249,10 +232,3 @@ def run():
 
 if __name__ == "__main__":
     run()
-
-
-# ====== DEBUG IDEAS =======
-# 1. make the sure the decoder decode stuff that makes sense
-# 2. check everything is normalized properly
-# 3. check the solver algorithm
-# TODO: clean normalization

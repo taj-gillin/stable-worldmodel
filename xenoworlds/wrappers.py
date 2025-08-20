@@ -11,6 +11,10 @@ import torchvision.transforms.v2 as transforms
 import torch
 import numpy as np
 
+import xenoworlds
+
+######## Env Wrappers ########
+
 
 class TransformObservation(gym.ObservationWrapper):
     def __init__(

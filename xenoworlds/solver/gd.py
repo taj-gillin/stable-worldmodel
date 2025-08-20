@@ -1,7 +1,4 @@
 import torch
-
-import numpy as np
-
 from loguru import logger as logging
 from torch.nn import functional as F
 from einops import rearrange
@@ -123,12 +120,9 @@ class GDSolver(BaseSolver):
 
             self.init.data += torch.randn_like(self.init) * self.action_noise
 
-        # TODO add logger here
-        # TODO break solving if finished
+        # TODO add wandb logger here
+        # TODO break solving if finished, i.e eval the state reached
         logging.info(f"Final gradient solver loss: {loss.item()}")
-
-        # ! ----- [DEBUG] Remove later
-        self.DEBUG_save_imagined_trajectories(obs_0, self.init, video=True)
 
         # -- return the actions
         mpc_actions = self.init.detach().cpu()
@@ -140,7 +134,7 @@ class GDSolver(BaseSolver):
         mpc_actions = rearrange(
             mpc_actions,
             "b t (f d) -> b (t f) d",
-            f=self.horizon,
+            f=self.world_model.frameskip,
         )
 
         mpc_actions = self.world_model.denormalize_actions(mpc_actions)
@@ -149,40 +143,3 @@ class GDSolver(BaseSolver):
         # mpc_actions = mpc_actions[:, 0]
 
         return mpc_actions
-
-    def DEBUG_save_imagined_trajectories(self, obs_0, actions, video=False):
-        import imageio
-
-        if self.world_model is None:
-            raise ValueError("World model is None, cannot debug imagined trajectories")
-
-        # -- simulate the world under actions sequence
-        z_obs_i, z = self.world_model.rollout(obs_0, actions)
-
-        # -- decode obs
-        decoded_obs, _ = self.world_model.decode_obs(z_obs_i)
-
-        print("❤️ Decoded obs shape: ", decoded_obs["pixels"].shape)
-
-        for traj in decoded_obs["pixels"]:
-            frames = []
-            for idx, frame in enumerate(traj):
-                frame = rearrange(frame, "c w1 w2 -> w1 w2 c")
-                frame = rearrange(frame, "w1 w2 c -> (w1) w2 c")
-                frame = frame.detach().cpu().numpy()
-                frames.append(frame)
-
-            if video:
-                video_writer = imageio.get_writer("videos/imagined.mp4", fps=12)
-
-            for idx, frame in enumerate(frames):
-                frame = frame * 2 - 1 if frame.min() >= 0 else frame
-                frame = (((np.clip(frame, -1, 1) + 1) / 2) * 255).astype(np.uint8)
-                if video:
-                    video_writer.append_data(frame)
-                else:
-                    # save the image
-                    imageio.imwrite(f"videos/imagined_{idx}.png", frame)
-
-            if video:
-                video_writer.close()
