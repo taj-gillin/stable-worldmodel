@@ -211,6 +211,7 @@ logs/
 multirun/
 checkpoints/
 dino_wm_ckpt/
+old_results/
 outputs/
 wandb/
 videos/

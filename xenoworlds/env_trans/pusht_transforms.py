@@ -37,8 +37,8 @@ class BaseDeform(gym.Wrapper):
         self,
         env,
         every_k_steps=-1,
-        apply_on_reset=False,
-        apply_before_step=False,
+        apply_on_reset=True,
+        apply_before_step=True,
         apply_at_init=True,
     ):
         super().__init__(env)
@@ -63,10 +63,10 @@ class BaseDeform(gym.Wrapper):
 
     @property
     def should_update(self):
-        should_init_deform = not self.init_applied and self.apply_at_init
+        #should_init_deform = not self.init_applied and self.apply_at_init
         return (
             self.every_k_steps > 0 and self._step % self.every_k_steps == 0
-        ) or should_init_deform
+        ) #or should_init_deform
 
     def reset(self, **kwargs):
         self._step = 0
@@ -108,30 +108,27 @@ class BackgroundDeform(BaseDeform):
         self.noise_fixed = noise_fixed
 
         # download image if url
-        if image is not None and not os.path.exists(image):
-            print(f"Image {image} not found locally, downloading...")
-            response = requests.get(image)
-            response.raise_for_status()
-            bio = BytesIO(response.content)
-            bio.seek(0)
-            response = requests.get(image)
-            image = BytesIO(response.content)
-            self.image = pygame.image.load(bio, "bg.png")
+        if image is not None:
+            if not os.path.exists(image):
+                print(f"Image {image} not found locally, downloading...")
+                response = requests.get(image)
+                response.raise_for_status()
+                bio = BytesIO(response.content)
+                bio.seek(0)
+                response = requests.get(image)
+                image = BytesIO(response.content)
+                self.image = pygame.image.load(bio, "bg.png")
 
-        elif os.path.exists(image):
-            self.image = pygame.image.load(image)
+            elif os.path.exists(image):
+                self.image = pygame.image.load(image)
 
-        # if noise is provided sample noise
-        elif noise_fn is not None:
-            self.image = self.ndarray_2_surface(noise_fn())
+            elif self.noise_fn is None:
+                raise ValueError(
+                    "Either an image URL/PATH or a noise function must be provided."
+                )
 
-        else:
-            raise ValueError(
-                "Either an image URL/PATH or a noise function must be provided."
-            )
-
-        if self.apply_at_init:
-            self.deform()
+        # if self.apply_at_init:
+        #     self.deform()
 
     def ndarray_2_surface(self, img):
         if not isinstance(img, (np.ndarray)):
@@ -164,11 +161,13 @@ class BackgroundDeform(BaseDeform):
 
     def deform(self):
         if self.image is not None:
-            # resample noise if necessary
             if self.noise_fn and not self.noise_fixed:
-                self.image = self.ndarray_2_surface(self.noise_fn())
-
-            self.env.unwrapped.set_background(self.image)
+                self.image = self.ndarray_2_surface(self.noise_fn(self.rng))
+                self.env.unwrapped.set_background(self.image)
+        else:
+            if self.noise_fn is not None:
+                self.image = self.ndarray_2_surface(self.noise_fn(self.rng))
+                self.env.unwrapped.set_background(self.image)
 
 
 class ColorDeform(BaseDeform):
@@ -275,6 +274,7 @@ class ShapeDeform(BaseDeform):
         randomize=False,
         angle: float = 0.0,
         scales: float | List[float] = 40.0,
+        rnd_scale: bool = False,
         **kwargs,  # every_k_steps, apply_on_reset, apply_before_step, ...
     ):
         super().__init__(env, **kwargs)
@@ -283,6 +283,7 @@ class ShapeDeform(BaseDeform):
         self.randomize = randomize
         self.angle = angle
         self.scales = scales
+        self.rnd_scale = rnd_scale
 
     # ---------- helpers ----------
     def _resolve_targets(self):
@@ -326,6 +327,9 @@ class ShapeDeform(BaseDeform):
         except Exception:
             return pygame.Color(default)
 
+    def _body_angle(self, body):
+        return getattr(body, "angle", self.angle)
+
     # ---------- deform ----------
     def deform(self):
         space = self.env.unwrapped.space
@@ -343,15 +347,18 @@ class ShapeDeform(BaseDeform):
                 continue
 
             color = self._body_color(body)
+            angle = self._body_angle(body)
             new_shape_name = self._choose_shape_for_target(i)
-
             remove_body_by_id(space, getattr(body, "id", None))
 
             scale = self.scales if type(self.scales) in (int, float) else self.scales[i]
 
+            if self.rnd_scale:
+                scale = 0.2 + (5 - 0.2) * self.rng.random(1).item()
+
             # Create replacement body
             new_body = self.env.unwrapped.add_shape(
-                new_shape_name, pos, self.angle, color=color, scale=scale
+                new_shape_name, position=pos, angle=angle, color=color, scale=scale
             )
 
             # Update env references when we know them

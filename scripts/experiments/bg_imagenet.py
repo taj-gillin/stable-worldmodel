@@ -180,7 +180,7 @@ def run():
 
     world = xenoworlds.World(
         "xenoworlds/PushT-v1",
-        num_envs=10,
+        num_envs=20,
         wrappers=wrappers,
         max_episode_steps=Config.horizon * Config.frameskip,
         goal_wrappers=goal_wrappers,
@@ -215,8 +215,8 @@ def run():
         topk=30,
         device=device,
     )
-
-    cem_solver = xenoworlds.solver.MPCWrapper(cem_solver, n_mpc_actions=1)
+ 
+    #cem_solver = xenoworlds.solver.MPCWrapper(cem_solver, n_mpc_actions=5)
 
     policy = xenoworlds.policy.PlanningPolicy(world, cem_solver, output_dir=exp_path)
 

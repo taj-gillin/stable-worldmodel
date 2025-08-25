@@ -19,19 +19,20 @@ class World:
         seed: int = 2349867,
         max_episode_steps: int = 100,
         sample_goal_every_k_steps: int = -1,
-        output_dir: str = None,
+        output_dir="results",
     ):
         self.num_envs = num_envs
         self.set_seed(seed)
-        self.output_dir = output_dir
+        self.output_dir = Path(output_dir)
         self.envs, self.goal_envs = self.make_env(
             env_name,
             num_envs=num_envs,
             wrappers=wrappers,
             goal_wrappers=goal_wrappers,
             max_episode_steps=max_episode_steps,
-            add_video_wrapper=output_dir is not None,
+            add_video_wrapper=True,
         )
+
 
         logging.info("WORLD INITIALIZED")
         logging.info(f"ACTION SPACE: {self.envs.action_space}")
@@ -57,16 +58,12 @@ class World:
             for w in extra_wrappers:
                 e = w(e)
 
-                print(
-                    f"Wrapped env {idx} {hasattr(e, 'is_deform')} {self.env_seeds[idx]}"
-                )
-
                 if hasattr(e, "is_deform"):
                     e.set_seed(self.env_seeds[idx])
 
             if add_video_wrapper and not is_goal:
-                env_output_dir = self.output_dir / f"env_{idx}"
-                Path(env_output_dir).mkdir(parents=True, exist_ok=True)
+                env_output_dir = self.output_dir / f"results/env_{idx}"
+                env_output_dir.mkdir(parents=True, exist_ok=True)
                 e = xenoworlds.wrappers.RecordVideo(
                     e, video_folder=env_output_dir, name_prefix=f"env_{idx}"
                 )
@@ -298,7 +295,7 @@ class SaveInitAndGoal(WorldWrapper):
             to_pil = transforms.ToPILImage()
 
             for env_idx in range(self.unwrapped.num_envs):
-                env_output_dir = self.unwrapped.output_dir / f"env_{env_idx}"
+                env_output_dir = self.unwrapped.output_dir / f"results/env_{env_idx}"
                 env_output_dir.mkdir(parents=True, exist_ok=True)
                 img = to_pil(obs_pixels[env_idx])
                 # TODO add episode number if multiple episodes

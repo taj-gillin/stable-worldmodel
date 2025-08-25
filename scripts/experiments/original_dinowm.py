@@ -175,12 +175,11 @@ def run():
 
     world = xenoworlds.World(
         "xenoworlds/PushT-v1",
-        num_envs=10,
+        num_envs=20,
         wrappers=wrappers,
         max_episode_steps=Config.horizon * Config.frameskip,
         goal_wrappers=goal_wrappers,
         seed=torch.randint(0, 10000, (1,)).item(),
-        output_dir=exp_path,
     )
 
     # -- reproduce dino-wm pusht results (world wrapper)
@@ -211,13 +210,13 @@ def run():
         device=device,
     )
 
-    cem_solver = xenoworlds.solver.MPCWrapper(cem_solver, n_mpc_actions=1)
+    #cem_solver = xenoworlds.solver.MPCWrapper(cem_solver, n_mpc_actions=5)
 
-    policy = xenoworlds.policy.PlanningPolicy(world, cem_solver, output_dir=exp_path)
+    policy = xenoworlds.policy.PlanningPolicy(world, cem_solver)
 
     # -- run evaluation
     evaluator = xenoworlds.evaluator.Evaluator(
-        world, policy, output_dir=exp_path, device=device
+        world, policy, device=device
     )
     data = evaluator.run(episodes=1)
 

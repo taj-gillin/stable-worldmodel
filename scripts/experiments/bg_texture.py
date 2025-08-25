@@ -161,8 +161,10 @@ def run():
             transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
         ])
 
-    def noise_fn():
-        return np.random.randint(0, 255, (512, 512, 3), dtype=np.uint8)
+    def noise_fn(rng=None):
+        if rng is None:
+            rng = np.random.default_rng()
+        return rng.integers(0, 255, (512, 512, 3), dtype=np.uint8)
 
     deform_wrappers = [
         lambda x: xenoworlds.BackgroundDeform(
@@ -187,7 +189,7 @@ def run():
 
     world = xenoworlds.World(
         "xenoworlds/PushT-v1",
-        num_envs=10,
+        num_envs=20,
         wrappers=wrappers,
         max_episode_steps=Config.horizon * Config.frameskip,
         goal_wrappers=goal_wrappers,
@@ -223,7 +225,7 @@ def run():
         device=device,
     )
 
-    cem_solver = xenoworlds.solver.MPCWrapper(cem_solver, n_mpc_actions=1)
+    #cem_solver = xenoworlds.solver.MPCWrapper(cem_solver, n_mpc_actions=5)
 
     policy = xenoworlds.policy.PlanningPolicy(world, cem_solver, output_dir=exp_path)
 

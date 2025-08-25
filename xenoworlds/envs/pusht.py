@@ -809,7 +809,7 @@ class PushT(gym.Env):
         )  # https://htmlcolorcodes.com/color-names
         return shape
 
-    def add_circle(self, position, radius, color="RoyalBlue", scale=1):
+    def add_circle(self, position, radius=15, color="RoyalBlue", scale=1, angle=0):
         body = pymunk.Body(body_type=pymunk.Body.KINEMATIC)
         body.position = position
         body.friction = 1
@@ -818,7 +818,9 @@ class PushT(gym.Env):
         self.space.add(body, shape)
         return body
 
-    def add_box(self, position, height, width, color="LightSlateGray", scale=1):
+    def add_box(
+        self, position, height, width, color="LightSlateGray", scale=1, angle=0
+    ):
         mass = 1
         inertia = pymunk.moment_for_box(mass, (height * scale, width * scale))
         body = pymunk.Body(mass, inertia)

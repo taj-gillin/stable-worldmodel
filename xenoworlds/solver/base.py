@@ -13,9 +13,13 @@ class BaseSolver(torch.nn.Module):
         self.world_model.requires_grad_(False)
 
     def __call__(
-        self, states: torch.Tensor, action_space, goals: torch.Tensor
+        self,
+        states: torch.Tensor,
+        action_space,
+        goals: torch.Tensor,
+        **kwargs,
     ) -> torch.Tensor:
-        return self.solve(states, action_space, goals)
+        return self.solve(states, action_space, goals, **kwargs)
 
     def solve(
         self, states: torch.Tensor, action_space, goals: torch.Tensor

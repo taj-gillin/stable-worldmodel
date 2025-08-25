@@ -4,16 +4,17 @@ from loguru import logger as logging
 from transformers import AutoConfig, AutoModel
 import torchvision.transforms.v2 as transforms
 import xenoworlds
-import numpy as np
-from functools import partial
 
+import hydra
+from omegaconf import DictConfig
+from hydra.core.hydra_config import HydraConfig
 
 class Config:
     """Configuration for PUSHT Eval"""
 
     # experiments
     root_dir: str = "./results/"
-    exp_name: str = "dinowm_bg_color"
+    exp_name: str = "dino_wm_pusht_eval"
 
     # encoder
     img_size: int = 224
@@ -143,13 +144,13 @@ def get_world_model(action_dim, proprio_dim, device="cpu"):
     return world_model
 
 
-# @hydra.main(version_base=None, config_path="./", config_name="slurm")
-def run():
+@hydra.main(version_base=None, config_path="./conf", config_name="config")
+def run(cfg: DictConfig):
     """Run training of predictor"""
 
-    exp_path = Path(Config.root_dir) / Config.exp_name
+    #exp_path = Path(cfg.root_dir) / cfg.exp_name
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    SEED = torch.randint(0, 10000, (1,)).item()
+    output_dir = HydraConfig.get().runtime.output_dir
 
     # -- make transform operations
     def default_transform(img_size=224):
@@ -162,28 +163,15 @@ def run():
             transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
         ])
 
-    def noise_fn(rng=None):
-        if rng is None:
-            rng = np.random.default_rng()
-        color = rng.integers(128, 256, size=(3,), dtype=np.uint8)
-        return np.tile(color, (512, 512, 1))
-
-    deform_wrappers = [
-        lambda x: xenoworlds.BackgroundDeform(
-            x,
-            noise_fn=noise_fn,
-            noise_fixed=True,
-        ),
-    ]
-
-    wrappers = deform_wrappers + [
+    wrappers = [
         lambda x: xenoworlds.wrappers.AddRenderObservation(x, render_only=False),
         lambda x: xenoworlds.wrappers.TransformObservation(
             x, transform=default_transform()
         ),
     ]
 
-    goal_wrappers = deform_wrappers + [
+
+    goal_wrappers = [
         lambda x: xenoworlds.wrappers.AddRenderObservation(x, render_only=False),
         lambda x: xenoworlds.wrappers.TransformObservation(
             x, transform=default_transform()
@@ -192,15 +180,16 @@ def run():
 
     world = xenoworlds.World(
         "xenoworlds/PushT-v1",
-        num_envs=20,
+        num_envs=cfg.env.num_envs,
         wrappers=wrappers,
-        max_episode_steps=Config.horizon * Config.frameskip,
+        max_episode_steps=cfg.env.max_steps,
         goal_wrappers=goal_wrappers,
         seed=torch.randint(0, 10000, (1,)).item(),
-        output_dir=exp_path,
+        output_dir=output_dir,
     )
 
     # -- reproduce dino-wm pusht results (world wrapper)
+
     expert_dataset = xenoworlds.tmp.PushTDataset(
         data_path="pusht_noise/val/", normalize_action=False
     )
@@ -215,7 +204,12 @@ def run():
 
     action_dim = world.single_action_space.shape[-1]
     proprio_dim = world.single_observation_space["proprio"].shape[-1]
+
+    print(f"Action space dim: {action_dim}")
+    print(f"Proprioceptive space dim: {proprio_dim}")
     world_model = get_world_model(action_dim, proprio_dim, device=device)
+
+    print(f"World model: {world_model}")
 
     cem_solver = xenoworlds.solver.CEMSolver(
         world_model,
@@ -226,18 +220,27 @@ def run():
         action_dim=action_dim * Config.frameskip,
         topk=30,
         device=device,
+        output_dir=output_dir,
     )
 
-    #cem_solver = xenoworlds.solver.MPCWrapper(cem_solver, n_mpc_actions=5)
+    cem_solver = xenoworlds.solver.MPCWrapper(
+        cem_solver,
+        n_mpc_actions=cfg.mpc.chunk_executed
+    )
 
-    policy = xenoworlds.policy.PlanningPolicy(world, cem_solver, output_dir=exp_path)
+    policy = xenoworlds.policy.PlanningPolicy(world, cem_solver)
 
     # -- run evaluation
     evaluator = xenoworlds.evaluator.Evaluator(
-        world, policy, output_dir=exp_path, device=device
+        world, policy, device=device, output_dir=output_dir
     )
     data = evaluator.run(episodes=1)
 
-
 if __name__ == "__main__":
     run()
+
+# ====== DEBUG IDEAS =======
+# 1. make the sure the decoder decode stuff that makes sense
+# 2. check everything is normalized properly
+# 3. check the solver algorithm
+# TODO: clean normalization

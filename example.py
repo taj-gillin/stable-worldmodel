@@ -30,3 +30,6 @@ if __name__ == "__main__":
     evaluator = xenoworlds.Evaluator(world, solver)
     data = evaluator.run(episodes=5)
     # data will be a dict with all the collected metrics
+
+
+# TODO add a way to skip to inference and planning if env is solved!

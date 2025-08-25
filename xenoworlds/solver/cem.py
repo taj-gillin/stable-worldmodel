@@ -1,3 +1,4 @@
+from pathlib import Path
 import torch
 import nevergrad as ng
 import numpy as np
@@ -23,6 +24,7 @@ class CEMSolver(BaseSolver):
         topk,
         criterion=F.mse_loss,
         device="cpu",
+        output_dir="results",
     ):
         super().__init__(world_model)
         self.horizon = horizon
@@ -33,7 +35,7 @@ class CEMSolver(BaseSolver):
         self.topk = topk
 
         self.criterion = criterion
-
+        self.output_dir = Path(output_dir)
         self.device = device
 
     def init_action_distrib(self, obs_0, actions=None):
@@ -87,7 +89,13 @@ class CEMSolver(BaseSolver):
         loss = loss_pixel + proprio_scale * loss_proprio
         return loss
 
-    def solve(self, obs_0: dict, action_space, goals: dict, init_action=None):
+    def solve(
+        self,
+        obs_0: dict,
+        action_space,
+        goals: dict,
+        init_action=None,
+    ):
         # -- encode the goals
         z_goals = self.world_model.encode_obs(goals)
         z_goals = {k: v.detach() for k, v in z_goals.items()}
@@ -148,17 +156,53 @@ class CEMSolver(BaseSolver):
 
             print(f"Lossses at step {step}: {np.mean(losses)}")
 
-        mpc_actions = mean.detach().cpu()
+        actions = mean.detach().cpu()
 
-        mpc_actions = rearrange(
-            mpc_actions,
-            "b t (f d) -> b (t f) d",
-            f=self.horizon,
-        )
+        # TODO improve this
+        self.dump_decoded_trajectories(obs_0, actions, video=True)
 
-        mpc_actions = self.world_model.denormalize_actions(mpc_actions)
+        return actions
 
-        return mpc_actions
+    def dump_decoded_trajectories(self, obs_0, actions, video=False):
+        import imageio
+
+        wm = self.unwrapped.world_model
+
+        if wm is None:
+            raise ValueError("World model is None, cannot debug imagined trajectories")
+
+        # -- simulate the world under actions sequence
+        z_obs_i, z = wm.rollout(obs_0, actions.to(self.device))
+
+        # -- decode obs
+        decoded_obs, _ = wm.decode_obs(z_obs_i)
+
+        for env_idx, traj in enumerate(decoded_obs["pixels"]):
+            env_output_dir = self.output_dir / f"results/env_{env_idx}"
+            env_output_dir.mkdir(parents=True, exist_ok=True)
+            frames = []
+            for idx, frame in enumerate(traj):
+                frame = rearrange(frame, "c w1 w2 -> w1 w2 c")
+                frame = rearrange(frame, "w1 w2 c -> (w1) w2 c")
+                frame = frame.detach().cpu().numpy()
+                frames.append(frame)
+
+            if video:
+                video_path = env_output_dir / f"imagined_{env_idx}.mp4"
+                video_writer = imageio.get_writer(video_path, fps=12)
+
+            for idx, frame in enumerate(frames):
+                frame = frame * 2 - 1 if frame.min() >= 0 else frame
+                frame = (((np.clip(frame, -1, 1) + 1) / 2) * 255).astype(np.uint8)
+                if video:
+                    video_writer.append_data(frame)
+
+                # save the image
+                img_path = env_output_dir / f"imagined_frame_{idx}.png"
+                imageio.imwrite(img_path, frame)
+
+            if video:
+                video_writer.close()
 
 
 class CEMNevergrad(BaseSolver):
