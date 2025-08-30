@@ -9,6 +9,8 @@ import hydra
 from omegaconf import DictConfig
 from hydra.core.hydra_config import HydraConfig
 
+import numpy as np
+
 class Config:
     """Configuration for PUSHT Eval"""
 
@@ -163,7 +165,83 @@ def run(cfg: DictConfig):
             transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
         ])
 
-    wrappers = [
+
+    deform_wrappers = []
+
+
+    def bg_fn(rng=None):
+        if rng is None:
+            rng = np.random.default_rng()
+        color = rng.integers(128, 256, size=(3,), dtype=np.uint8)
+        return np.tile(color, (512, 512, 1))
+
+    def noise_fn(rng=None):
+        if rng is None:
+            rng = np.random.default_rng()
+        return rng.integers(0, 255, (512, 512, 3), dtype=np.uint8)
+
+
+    if cfg.env.deform == "agent.color":
+        deform_wrappers.append(
+            lambda x: xenoworlds.wrappers.ColorDeform(
+                x,
+                target=["agent"],
+                every_k_steps=-1,
+            )
+        )
+
+    elif cfg.env.deform == "agent.size":
+        deform_wrappers.append(
+            lambda x: xenoworlds.ShapeDeform(
+                x,
+                target=["agent"],
+                shapes="o",
+                randomize=False,
+                rnd_scale=True,
+            ),
+        )
+    
+    elif cfg.env.deform == "bg.color":
+        deform_wrappers.append(
+            lambda x: xenoworlds.BackgroundDeform(
+                x,
+                noise_fn=bg_fn,
+                noise_fixed=True,
+            ),
+        )
+
+    elif cfg.env.deform == "bg.imagenet":
+        deform_wrappers.append(
+            lambda x: xenoworlds.ImageNetDeform(x),
+        )
+
+    elif cfg.env.deform == "bg.noise":
+        deform_wrappers.append(
+            lambda x: xenoworlds.BackgroundDeform(
+            x,
+            noise_fn=noise_fn,
+        ),
+        )
+
+    elif cfg.env.deform == "block.color":
+        deform_wrappers.append(
+            lambda x: xenoworlds.ColorDeform(
+                x,
+                target=["block"],
+                every_k_steps=-1,
+            ),
+        )
+
+    elif cfg.env.deform == "block.shape":
+        deform_wrappers.append(
+            lambda x: xenoworlds.ShapeDeform(x, target=["block"], randomize=True),
+        )
+
+    else:
+        pass
+
+
+    wrappers = deform_wrappers + [
         lambda x: xenoworlds.wrappers.AddRenderObservation(x, render_only=False),
         lambda x: xenoworlds.wrappers.TransformObservation(
             x, transform=default_transform()
@@ -171,7 +249,7 @@ def run(cfg: DictConfig):
     ]
 
 
-    goal_wrappers = [
+    goal_wrappers = deform_wrappers + [
         lambda x: xenoworlds.wrappers.AddRenderObservation(x, render_only=False),
         lambda x: xenoworlds.wrappers.TransformObservation(
             x, transform=default_transform()

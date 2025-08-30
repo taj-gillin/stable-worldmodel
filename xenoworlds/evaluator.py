@@ -96,31 +96,6 @@ class Evaluator:
 
         return data
 
-    # def eval_state(self, goal_state, cur_state):
-    #     """
-    #     Return True if the goal is reached
-    #     [agent_x, agent_y, T_x, T_y, angle, agent_vx, agent_vy]
-    #     from: https://github.com/gaoyuezhou/dino_wm/blob/main/env/pusht/pusht_wrapper.py
-    #     """
-
-    #     # if position difference is < 20, and angle difference < np.pi/9, then success
-    #     pos_diff = np.linalg.norm(
-    #         goal_state[:, :4] - cur_state[:, :4], axis=-1
-    #     )  # (batch_size,)
-    #     angle_diff = np.abs(goal_state[:, 4] - cur_state[:, 4])  # (batch_size,)
-    #     angle_diff = np.minimum(angle_diff, 2 * np.pi - angle_diff)  # (batch_size,)
-
-    #     success = (pos_diff < 20) & (angle_diff < np.pi / 9)  # (batch_size,)
-    #     state_dist = np.linalg.norm(goal_state - cur_state, axis=-1)  # (batch_size,)
-
-    #     for i in range(len(success)):
-    #         env_output_dir = self.output_dir / f"env_{i}" 
-    #         env_output_dir.mkdir(parents=True, exist_ok=True)
-    #         with open(env_output_dir / "results.txt", "w") as f:
-    #             f.write(f"Success: {success[i]}\nState distance: {state_dist[i]}\n")
-
-    #     return success, state_dist
-
     def eval_state(self, goal_state, cur_state):
         """
         Return True if the goal is reached

@@ -13,7 +13,7 @@ hydra:
     tasks_per_node: ${hydra.launcher.gpus_per_node}
     cpus_per_task: 6
     mem_gb: 32
-    timeout_min: 120 #2880
+    timeout_min: 2880
     partition: long
     signal_delay_s: 120
   sweep:
@@ -24,8 +24,11 @@ hydra:
 env:
   num_envs: 2
   max_steps: 20000 # [20000, 25, 200] 
+  deform: "none"
 
 mpc:
   chunk_executed: 5 # [5,3,1] chunk size = 5 (i.e. frame-skip)
 
 # deformations: [... , .... ,...]
+# python scripts/experiments/eval_dino_wm.py --multirun hydra/launcher=submitit_slurm env.num_envs=50 env.max_steps=200
+# 00,25,200,2000 mpc.chunk_executed=5,1,3
