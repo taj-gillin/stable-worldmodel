@@ -213,11 +213,11 @@ multirun/
 checkpoints/
 dino_wm_ckpt/
 pusht_noise/
+lightning_logs/
 wandb/
 videos/
 dataset/
 *.out
 *.mp4
-
 
 old_tests/

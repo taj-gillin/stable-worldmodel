@@ -235,6 +235,9 @@ def run(cfg):
         log_every_n_steps=50,
         precision="16-mixed",
         enable_checkpointing=True,
+        accelerator="gpu",
+        devices=4,
+        strategy="ddp",
     )
 
     manager = spt.Manager(trainer=trainer, module=world_model, data=data)
