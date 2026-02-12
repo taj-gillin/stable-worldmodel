@@ -10,7 +10,7 @@ def run(cfg):
     """Run data collection script"""
 
     world = swm.World('swm/PinPad-v0', **cfg.world)
-    world.set_policy(swm.envs.pinpad.expert_policy.ExpertPolicy())
+    world.set_policy(swm.envs.pinpad.expert_policy.ExpertPolicy(max_norm=0.25))
     logging.info("Set world's policy to expert policy")
 
     logging.info(f'Collecting data for {cfg.num_traj} trajectories')

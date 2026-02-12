@@ -28,10 +28,10 @@ def compute_action_discrete(agent_position, target_position):
     return action
 
 
-def compute_action_continuous(agent_position, target_position):
+def compute_action_continuous(agent_position, target_position, max_norm):
     delta = target_position - agent_position
-    if np.linalg.norm(delta) > 1:
-        action = delta / np.linalg.norm(delta)  # Clips norm
+    if np.linalg.norm(delta) > max_norm:
+        action = max_norm * delta / np.linalg.norm(delta)  # Clips norm
     else:
         action = delta
     return action
@@ -72,7 +72,7 @@ def get_action(info_dict, env, env_type, **kwargs):
             )
         elif env_type == 'continuous':
             actions.append(
-                compute_action_continuous(agent_position, target_position)
+                compute_action_continuous(agent_position, target_position, kwargs['max_norm'])
             )
         else:
             raise ValueError(f'Invalid environment type: {env_type}')
@@ -103,9 +103,10 @@ class ExpertPolicyDiscrete(BasePolicy):
 class ExpertPolicy(BasePolicy):
     """Expert policy for the PinPad environment."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, max_norm=1.0, **kwargs):
         super().__init__(**kwargs)
         self.type = 'expert'
+        self.max_norm = max_norm
 
     def get_action(self, info_dict, **kwargs):
         assert hasattr(self, 'env'), 'Environment not set for the policy'
@@ -116,4 +117,5 @@ class ExpertPolicy(BasePolicy):
             'Target position must be provided in info_dict'
         )
 
+        kwargs['max_norm'] = self.max_norm
         return get_action(info_dict, self.env, 'continuous', **kwargs)
