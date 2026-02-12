@@ -22,7 +22,12 @@ DEFAULT_VARIATIONS = (
 # TODO: Re-enable targets to be sequences of pads instead of single pads
 class PinPad(gym.Env):
 
-    def __init__(self, seed=None, init_value=None):
+    def __init__(
+        self,
+        seed=None,
+        init_value=None,
+        render_mode='rgb_array',  # For backward compatibility; not used
+    ):
         # Build variation space
         self.variation_space = self._build_variation_space()
         if init_value is not None:
