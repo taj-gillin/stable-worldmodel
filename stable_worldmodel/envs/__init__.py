@@ -113,6 +113,11 @@ register(
     entry_point='stable_worldmodel.envs.pinpad:PinPad',
 )
 
+register(
+    id='swm/PinPadImage-v0',
+    entry_point='stable_worldmodel.envs.pinpad:PinPadImage',
+)
+
 
 ############
 # DISCRETE #

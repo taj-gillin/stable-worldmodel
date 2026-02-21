@@ -131,6 +131,26 @@ LAYOUT_EIGHT = """
 ################
 """.strip('\n')
 
+# Open layout for PinPadImage: no interior walls, just border
+LAYOUT_OPEN = """
+################
+#              #
+#              #
+#              #
+#              #
+#              #
+#              #
+#              #
+#              #
+#              #
+#              #
+#              #
+#              #
+#              #
+#              #
+################
+""".strip('\n')
+
 LAYOUTS = {
     'three': LAYOUT_THREE,
     'four': LAYOUT_FOUR,
