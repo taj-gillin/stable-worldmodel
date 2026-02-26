@@ -46,6 +46,10 @@ env = [
     "opencv-python",
 ]
 
+opro = [
+    "openai>=1.0.0",
+]
+
 [dependency-groups]
 dev = [
   "ipdb",

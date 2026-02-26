@@ -1,0 +1,22 @@
+# PinPadImage CLIP/SigLIP heatmap visualization config
+#
+# Uses PinPadImage env (swm/PinPadImage-v0): cat_background.jpg with red dot agent.
+# For each (x,y) position, renders the state, computes image embedding,
+# then L2 distance to each goal prompt. Outputs side-by-side: env on left, heatmap on right.
+
+grid_resolution: 64  # samples per axis (higher = finer heatmap)
+
+model: openai/clip-vit-base-patch32
+# Alternative: google/siglip2-so400m-patch14-384
+
+goal_prompts:
+  - "laser pointer on the cat's eye"
+  - "laser pointer on the cat's ear"
+  - "laser pointer on the cat's paws"
+  - "laser pointer on the cat's nose"
+
+# Target (x,y) positions for ground-truth distance [x1,y1, x2,y2, ...]
+# Adjust for your cat image: eye, ear, paws, nose (typical layout)
+goal_positions: [8.0, 5.0, 5.0, 3.0, 7.0, 12.0, 8.0, 7.0]
+
+output_dir: results/pinpad_heatmap

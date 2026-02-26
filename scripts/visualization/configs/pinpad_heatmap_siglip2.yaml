@@ -1,0 +1,18 @@
+# PinPadImage SigLIP 2 heatmap visualization config
+#
+# Same as pinpad_heatmap.yaml but uses SigLIP 2 for embeddings.
+# SigLIP 2 often captures different semantic details than CLIP.
+
+grid_resolution: 64
+
+model: google/siglip2-so400m-patch14-384
+
+goal_prompts:
+  - "laser pointer on the cat's eye"
+  - "laser pointer on the cat's ear"
+  - "laser pointer on the cat's paws"
+  - "laser pointer on the cat's nose"
+
+goal_positions: [8.0, 5.0, 5.0, 3.0, 7.0, 12.0, 8.0, 7.0]
+
+output_dir: results/pinpad_heatmap_siglip2
