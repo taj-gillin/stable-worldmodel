@@ -113,6 +113,11 @@ register(
     entry_point='stable_worldmodel.envs.dmcontrol.quadruped:QuadrupedDMControlWrapper',
 )
 
+register(
+    id="swm/ShapeLab-v0",
+    entry_point="stable_worldmodel.envs.shape_lab:ShapeLab",
+)
+
 
 ############
 # DISCRETE #

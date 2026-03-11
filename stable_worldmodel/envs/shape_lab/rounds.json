@@ -1,0 +1,244 @@
+{
+  "rounds": [
+    {
+      "time_limit": 1000,
+      "description": "Round 1: Intro Circle + Red",
+      "required_item": {
+        "type": "CIRCLE",
+        "color": "RED"
+      }
+    },
+    {
+      "time_limit": 1000,
+      "description": "Round 2: Intro Square",
+      "required_item": {
+        "type": "SQUARE",
+        "color": "RED"
+      }
+    },
+    {
+      "time_limit": 1000,
+      "description": "Round 3: Test Circle recall",
+      "required_item": {
+        "type": "CIRCLE",
+        "color": "RED"
+      }
+    },
+    {
+      "time_limit": 1000,
+      "description": "Round 4: Intro Triangle",
+      "required_item": {
+        "type": "TRIANGLE",
+        "color": "RED"
+      }
+    },
+    {
+      "time_limit": 1000,
+      "description": "Round 5: Test Square recall",
+      "required_item": {
+        "type": "SQUARE",
+        "color": "RED"
+      }
+    },
+    {
+      "time_limit": 1200,
+      "description": "Round 6: Intro Blue color",
+      "required_item": {
+        "type": "CIRCLE",
+        "color": "BLUE"
+      }
+    },
+    {
+      "time_limit": 1200,
+      "description": "Round 7: Test Blue + Square",
+      "required_item": {
+        "type": "SQUARE",
+        "color": "BLUE"
+      }
+    },
+    {
+      "time_limit": 1200,
+      "description": "Round 8: Test Red + Triangle",
+      "required_item": {
+        "type": "TRIANGLE",
+        "color": "RED"
+      }
+    },
+    {
+      "time_limit": 1200,
+      "description": "Round 9: Test Blue + Triangle",
+      "required_item": {
+        "type": "TRIANGLE",
+        "color": "BLUE"
+      }
+    },
+    {
+      "time_limit": 1200,
+      "description": "Round 10: Intro Green color",
+      "required_item": {
+        "type": "CIRCLE",
+        "color": "GREEN"
+      }
+    },
+    {
+      "time_limit": 1200,
+      "description": "Round 11: Test Green + Square",
+      "required_item": {
+        "type": "SQUARE",
+        "color": "GREEN"
+      }
+    },
+    {
+      "time_limit": 1200,
+      "description": "Round 12: Test Blue Circle recall",
+      "required_item": {
+        "type": "CIRCLE",
+        "color": "BLUE"
+      }
+    },
+    {
+      "time_limit": 1200,
+      "description": "Round 13: Test Green + Triangle",
+      "required_item": {
+        "type": "TRIANGLE",
+        "color": "GREEN"
+      }
+    },
+    {
+      "time_limit": 1200,
+      "description": "Round 14: Intro Star shape",
+      "required_item": {
+        "type": "STAR",
+        "color": "RED"
+      }
+    },
+    {
+      "time_limit": 1200,
+      "description": "Round 15: Test Star + Blue",
+      "required_item": {
+        "type": "STAR",
+        "color": "BLUE"
+      }
+    },
+    {
+      "time_limit": 1200,
+      "description": "Round 16: Test Star + Green",
+      "required_item": {
+        "type": "STAR",
+        "color": "GREEN"
+      }
+    },
+    {
+      "time_limit": 1200,
+      "description": "Round 17: Intro Yellow color",
+      "required_item": {
+        "type": "CIRCLE",
+        "color": "YELLOW"
+      }
+    },
+    {
+      "time_limit": 1200,
+      "description": "Round 18: Test Yellow + Square",
+      "required_item": {
+        "type": "SQUARE",
+        "color": "YELLOW"
+      }
+    },
+    {
+      "time_limit": 1200,
+      "description": "Round 19: Test Yellow + Triangle",
+      "required_item": {
+        "type": "TRIANGLE",
+        "color": "YELLOW"
+      }
+    },
+    {
+      "time_limit": 1200,
+      "description": "Round 20: Test Yellow + Star",
+      "required_item": {
+        "type": "STAR",
+        "color": "YELLOW"
+      }
+    },
+    {
+      "time_limit": 1200,
+      "description": "Round 21: Intro Heart shape",
+      "required_item": {
+        "type": "HEART",
+        "color": "RED"
+      }
+    },
+    {
+      "time_limit": 1200,
+      "description": "Round 22: Test Heart + Blue",
+      "required_item": {
+        "type": "HEART",
+        "color": "BLUE"
+      }
+    },
+    {
+      "time_limit": 1200,
+      "description": "Round 23: Test Heart + Green",
+      "required_item": {
+        "type": "HEART",
+        "color": "GREEN"
+      }
+    },
+    {
+      "time_limit": 1200,
+      "description": "Round 24: Test Heart + Yellow",
+      "required_item": {
+        "type": "HEART",
+        "color": "YELLOW"
+      }
+    },
+    {
+      "time_limit": 1200,
+      "description": "Round 25: Intro Purple color",
+      "required_item": {
+        "type": "CIRCLE",
+        "color": "PURPLE"
+      }
+    },
+    {
+      "time_limit": 1200,
+      "description": "Round 26: Test Purple + Square",
+      "required_item": {
+        "type": "SQUARE",
+        "color": "PURPLE"
+      }
+    },
+    {
+      "time_limit": 1200,
+      "description": "Round 27: Test Purple + Triangle",
+      "required_item": {
+        "type": "TRIANGLE",
+        "color": "PURPLE"
+      }
+    },
+    {
+      "time_limit": 1200,
+      "description": "Round 28: Test Purple + Star",
+      "required_item": {
+        "type": "STAR",
+        "color": "PURPLE"
+      }
+    },
+    {
+      "time_limit": 1200,
+      "description": "Round 29: Test Purple + Heart",
+      "required_item": {
+        "type": "HEART",
+        "color": "PURPLE"
+      }
+    },
+    {
+      "time_limit": 1000,
+      "description": "Round 30: Final test - Red Circle callback",
+      "required_item": {
+        "type": "CIRCLE",
+        "color": "RED"
+      }
+    }
+  ]
+}
